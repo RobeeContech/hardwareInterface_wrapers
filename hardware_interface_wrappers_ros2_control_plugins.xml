@@ -1,0 +1,12 @@
+<library path="hardware_interface_wrappers">
+  <!-- Transmission types -->
+  <class name="hardware_interface_wrappers/TransmissionWrapper"
+         type="hardware_interface_wrappers::TransmissionWrapper"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      wrapper hardware interface that integrates the  ros2 Transmissions on the joints states and comannds.
+      Transmisions are dynamiclay loaded wiht use of transmisions_manager class.
+    </description>
+  </class>
+
+</library>

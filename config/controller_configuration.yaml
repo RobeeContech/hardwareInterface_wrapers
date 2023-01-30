@@ -1,0 +1,86 @@
+# Controller manager configuration
+controller_manager:
+  ros__parameters:
+    update_rate: 10  # Hz
+
+    ### Controllers to be initialized at startup ###
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    robee_arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    x_y_rot_controller:
+      type: position_controllers/JointGroupPositionController
+
+    ptr_controller:
+      type: position_controllers/JointGroupPositionController
+
+    inclinometer_state_broadcaster:
+      type: inclinometer_sensor_broadcaster/InclinometerSensorBroadcaster
+
+    tilt_controller:
+      type: tilt_controller/TiltController
+
+    vacuum_ef_controller:
+      type: vacuum_end_effector_controller/VacuumEndEffectorController
+        
+    glue_ef_controller:
+      type: glue_end_effector_controller/GlueEndEffectorController
+
+    profiler_state_broadcaster:
+      type: profiler_sensor_broadcaster/ProfilerSensorBroadcaster
+
+
+inclinometer_state_broadcaster:
+   ros__parameters:
+       topic_name: inclinometer_state
+
+x_y_rot_controller:
+  ros__parameters:
+    joints:
+      - joint_y_rot
+      - joint_x_rot
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      
+ptr_controller:
+  ros__parameters:
+    joints:
+      - joint_ptr
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+
+robee_arm_controller:
+  ros__parameters:
+    joints:
+      - joint1
+      - joint2
+      - joint_z
+      - joint_z_rot
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      - velocity
+
+    state_publish_rate: 200.0 # Defaults to 50
+    action_monitor_rate: 20.0 # Defaults to 20
+
+    use_closed_loop_pid_adapter: false
+    allow_partial_joints_goal: false # Defaults to false
+    open_loop_control: true
+    allow_integration_in_goal_trajectories: true
+    constraints:
+      stopped_velocity_tolerance: 0.01 # Defaults to 0.01
+      goal_time: 0.0 # Defaults to 0.0 (start immediately)
