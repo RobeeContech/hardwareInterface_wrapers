@@ -32,6 +32,7 @@
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/lifecycle_state_names.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
+#include "pluginlib/class_loader.hpp"
 
 namespace hardware_interface_wrappers
 {
@@ -46,7 +47,9 @@ namespace hardware_interface_wrappers
       RCLCPP_SHARED_PTR_DEFINITIONS(TransmissionWrapper)
 
       ~TransmissionWrapper(){
-        
+          if (wrapped_interface_)  wrapped_interface_.reset();
+          loader_.reset();
+          SystemInterface::~SystemInterface();
       }
 
       HARDWARE_INTERFACE_WRAPPERS_PUBLIC
@@ -86,6 +89,9 @@ namespace hardware_interface_wrappers
       const std::vector<std::string> & stop_interfaces) override;
 
     private:
+
+      std::unique_ptr<hardware_interface::SystemInterface> wrapped_interface_;
+      std::unique_ptr<pluginlib::ClassLoader<hardware_interface::SystemInterface>> loader_;
 
     };
 

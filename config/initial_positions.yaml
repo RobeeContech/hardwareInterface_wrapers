@@ -1,9 +1,0 @@
-# Default initial positions for the robee arm's ros2_control fake system
-initial_positions:
-  joint1: 0.0
-  joint2: 0.0
-  joint_z: 0.0
-  joint_z_rot: 0.0
-  joint_y_rot: 0.0
-  joint_x_rot: 0.0
-  joint_ptr: 0.0

@@ -36,16 +36,13 @@ target_include_directories(
 )
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
-pluginlib_export_plugin_description_file(hardware_interface_wrappers  hardware_interface_wrappers_ros2_control_plugins.xml)
-  #${PROJECT_NAME} ros2_control_plugins.xml)
+pluginlib_export_plugin_description_file(hardware_interface hardware_interface_wrappers_ros2_control_plugins.xml)
 
 
 # INSTALL
-install(TARGETS ${PROJECT_NAME}
-  EXPORT export_${PROJECT_NAME}
-  RUNTIME DESTINATION bin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
+install(
+  TARGETS ${PROJECT_NAME}
+  DESTINATION lib
 )
 
 install(
@@ -61,7 +58,6 @@ install(
   DESTINATION
     share/${PROJECT_NAME}/
 )
-
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
