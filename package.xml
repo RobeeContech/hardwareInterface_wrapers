@@ -11,6 +11,8 @@
 
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
+  <depend>transmission_manager</depend>  
+  <depend>transmission_interface</depend>
 
   <test_depend>ament_cmake_gmock</test_depend>
 

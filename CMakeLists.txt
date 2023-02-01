@@ -19,6 +19,8 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
     hardware_interface
     pluginlib
     rclcpp
+    transmission_interface
+    transmission_manager
 )
 
 find_package(ament_cmake REQUIRED)
@@ -33,6 +35,7 @@ target_include_directories(
   ${PROJECT_NAME}
   PUBLIC
   include
+  transmission_manager
 )
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
@@ -66,16 +69,16 @@ if(BUILD_TESTING)
     test_transmission_wrapper
     test/transmission_wrapper_test.cpp
   )
-  target_include_directories(test_transmission_wrapper PUBLIC include hardware_interface)
-  ament_target_dependencies(test_transmission_wrapper hardware_interface)
+  target_include_directories(test_transmission_wrapper PUBLIC include hardware_interface transmission_manager)
+  ament_target_dependencies(test_transmission_wrapper hardware_interface transmission_manager)
 
 
   ament_add_gmock(
     test_transmission_wrapper_loader
     test/transmission_wrapper_loader_test.cpp
   )
-  target_include_directories(test_transmission_wrapper_loader PUBLIC include hardware_interface)
-  ament_target_dependencies(test_transmission_wrapper_loader hardware_interface)
+  target_include_directories(test_transmission_wrapper_loader PUBLIC include hardware_interface transmission_manager)
+  ament_target_dependencies(test_transmission_wrapper_loader hardware_interface transmission_manager)
 
 endif()
 
@@ -84,6 +87,7 @@ ament_export_include_directories(
 )
 ament_export_dependencies(
   hardware_interface
+  transmission_manager
 )
 
 ament_export_libraries(

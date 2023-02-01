@@ -3,6 +3,7 @@
  Author: Yoav Fekete
 */
 #include "hardware_interface_wrappers/transmission_wrapper.hpp"
+#include <map>
 
 const rclcpp::Logger logger = rclcpp::get_logger("TransmissionWrapper");
 
@@ -12,6 +13,7 @@ namespace hardware_interface_wrappers
   hardware_interface::CallbackReturn TransmissionWrapper::on_init(
     const hardware_interface::HardwareInfo & info)
   {
+    
     RCLCPP_INFO_STREAM(logger,"Start init of Transmission Wrapper");
     if (hardware_interface::SystemInterface::on_init(info) !=
         hardware_interface::CallbackReturn::SUCCESS)
@@ -19,6 +21,16 @@ namespace hardware_interface_wrappers
         RCLCPP_FATAL(logger,"Init Of System Interface Failed!");
         return hardware_interface::CallbackReturn::ERROR;
     }
+
+    hw_joint_states_.resize(info_.joints.size());
+    for(uint j = 0; j < info_.joints.size(); j++)
+        hw_joint_states_[j].resize(info_.joints[j].state_interfaces.size(),
+            std::numeric_limits<double>::quiet_NaN());
+
+    hw_joint_commands_.resize(info_.joints.size());
+    for(uint j = 0; j < info_.joints.size(); j++)
+        hw_joint_commands_[j].resize(info_.joints[j].command_interfaces.size(),
+            std::numeric_limits<double>::quiet_NaN());
 
     std::string wrapped_interface_name ="";
     for (auto x : info.hardware_parameters)
@@ -53,6 +65,14 @@ namespace hardware_interface_wrappers
     
     auto res = wrapped_interface_->on_init(info);
 
+    RCLCPP_INFO_STREAM(logger,"Loading transmission_manager");
+    transmission_manager_ = std::make_unique<transmission_manager::TransmissionManager>(); 
+    if (!transmission_manager_->init(info))
+    {
+       RCLCPP_FATAL(logger,"Init Of transmission_wrapper Failed: init of transmission_manager_ returned false");
+        return hardware_interface::CallbackReturn::ERROR;
+    }
+     
     RCLCPP_INFO_STREAM(logger,"Finish init TransmissionWrapper ");
     return res;
   }
@@ -60,12 +80,106 @@ namespace hardware_interface_wrappers
 
   std::vector<hardware_interface::StateInterface> TransmissionWrapper::export_state_interfaces()
   {
-    return wrapped_interface_->export_state_interfaces();
+    auto state_interfaces = wrapped_interface_->export_state_interfaces();
+    std::vector<hardware_interface::StateInterface> res;
+    //replace state interface of joints as are in the wrapped interface with the joint space converted vars
+
+  // map from joint index, to all its  JointHandle (one for each used state_interfaces)
+    std::map<std::string,std::vector<JointHandle>>     joint_handles; 
+    std::map<std::string, std::vector<ActuatorHandle>> actuator_handles;
+
+    for(long unsigned int k = 0; k<state_interfaces.size(); k++) 
+    {
+      bool is_joint_state = false;
+      for(uint j = 0; j < info_.joints.size(); j++ && !is_joint_state) 
+      {
+        if (state_interfaces[k].get_prefix_name() == info_.joints[j].name)
+        {
+          is_joint_state = true;
+          std::vector<JointHandle>    tjh;
+          std::vector<ActuatorHandle> tah;
+          bool found_state_interface = false;
+          for (uint i = 0; i < info_.joints[j].state_interfaces.size(); i++ && !found_state_interface)
+          {
+            if (state_interfaces[k].get_interface_name() == info_.joints[j].state_interfaces[i].name)
+            {
+              found_state_interface = true;
+              HackableHandle t(state_interfaces[k]);
+              res.push_back(hardware_interface::StateInterface(
+                  t.get_prefix_name(), t.get_interface_name(),&hw_joint_states_[j][i]));
+              tjh.push_back(transmission_interface::JointHandle(
+                  t.get_prefix_name(),t.get_interface_name(),&hw_joint_states_[j][i]));
+              tah.push_back(transmission_interface::ActuatorHandle(
+                  t.get_prefix_name(),t.get_interface_name(),t.get_ptr()));
+            }
+          }
+          if (!found_state_interface) {
+            RCLCPP_FATAL_STREAM(logger,"export_state_interfaces Failed: " << info_.joints[j].name<< "::"<<state_interfaces[k].get_interface_name() <<" was not found!");
+            res.clear();
+            return res;
+          }
+          joint_handles[info_.joints[j].name] = tjh;
+          actuator_handles[info_.joints[j].name] = tah;
+        }
+      }
+      if (!is_joint_state) res.push_back(state_interfaces[k]);
+    }
+
+    transmission_manager_->config_states_transmissions(info_ , joint_handles, actuator_handles);
+    return res;
   }
 
   std::vector<hardware_interface::CommandInterface> TransmissionWrapper::export_command_interfaces()
   {
-    return wrapped_interface_->export_command_interfaces();
+    auto command_interfaces =  wrapped_interface_->export_command_interfaces();
+    
+    std::vector<hardware_interface::CommandInterface> res;
+    //replace state interface of joints as are in the wrapped interface with the joint space converted vars
+  // map from joint index, to all its  JointHandle (one for each used state_interfaces)
+    std::map<std::string,std::vector<JointHandle>>     joint_handles; 
+    std::map<std::string, std::vector<ActuatorHandle>> actuator_handles;
+
+    for(long unsigned int k = 0; k<command_interfaces.size(); k++) 
+    {
+      bool is_joint_state = false;
+      for(uint j = 0; j < info_.joints.size(); j++ && !is_joint_state) 
+      {
+        if (command_interfaces[k].get_prefix_name() == info_.joints[j].name)
+        {
+          is_joint_state = true;
+          std::vector<JointHandle>    tjh;
+          std::vector<ActuatorHandle> tah;
+          bool found_state_interface = false;
+          for (uint i = 0; i < info_.joints[j].command_interfaces.size(); i++ && !found_state_interface)
+          {
+            if (command_interfaces[k].get_interface_name() == info_.joints[j].command_interfaces[i].name)
+            {
+              found_state_interface = true;
+              HackableHandle t(command_interfaces[k]);
+              res.push_back(hardware_interface::CommandInterface(
+                  t.get_prefix_name(), t.get_interface_name(),&hw_joint_states_[j][i]));
+              tjh.push_back(transmission_interface::JointHandle(
+                  t.get_prefix_name(),t.get_interface_name(),&hw_joint_states_[j][i]));
+              tah.push_back(transmission_interface::ActuatorHandle(
+                  t.get_prefix_name(),t.get_interface_name(),t.get_ptr()));
+            }
+          }
+          if (!found_state_interface) {
+            RCLCPP_FATAL_STREAM(logger,"export_state_interfaces Failed: " << info_.joints[j].name<< "::"<<command_interfaces[k].get_interface_name() <<" was not found!");
+            res.clear();
+            return res;
+          }
+          joint_handles[info_.joints[j].name] = tjh;
+          actuator_handles[info_.joints[j].name] = tah;
+        }
+      }
+      if (!is_joint_state) {
+        HackableHandle t(command_interfaces[k]);
+        res.push_back(hardware_interface::CommandInterface(t.get_prefix_name(), t.get_interface_name(),t.get_ptr()));
+      }
+    }
+    transmission_manager_->config_commands_transmissions(info_,joint_handles, actuator_handles);
+    return res;
   }
 
   hardware_interface::CallbackReturn TransmissionWrapper::on_activate(
@@ -83,30 +197,35 @@ namespace hardware_interface_wrappers
   hardware_interface::return_type TransmissionWrapper::read(
     const rclcpp::Time & time, const rclcpp::Duration & period)
   {
-    return wrapped_interface_->read(time,period);
+    auto res =  wrapped_interface_->read(time,period);
+    //convert state to joint space
+    transmission_manager_->state_actuator_to_joint();
+    return res;
   }
 
   hardware_interface::return_type TransmissionWrapper::write(
     const rclcpp::Time & time, const rclcpp::Duration & period)
   {
-    return wrapped_interface_->write(time,period);
+      auto res = wrapped_interface_->write(time,period);
+      //convert commands to actuator space
+      transmission_manager_->cmd_joint_to_actuator();
+      return res;
   }
 
-   
-    hardware_interface::return_type TransmissionWrapper::prepare_command_mode_switch(
-      const std::vector<std::string> & start_interfaces,
-      const std::vector<std::string> & stop_interfaces) 
-    {
-      return wrapped_interface_->prepare_command_mode_switch(start_interfaces,stop_interfaces);
-    }
+  hardware_interface::return_type TransmissionWrapper::prepare_command_mode_switch(
+    const std::vector<std::string> & start_interfaces,
+    const std::vector<std::string> & stop_interfaces) 
+  {
+    return wrapped_interface_->prepare_command_mode_switch(start_interfaces,stop_interfaces);
+  }
   
     
-    hardware_interface::return_type TransmissionWrapper::perform_command_mode_switch(
-      const std::vector<std::string> & start_interfaces,
-      const std::vector<std::string> & stop_interfaces) 
-    {
-      return wrapped_interface_->perform_command_mode_switch(start_interfaces,stop_interfaces);
-    }
+  hardware_interface::return_type TransmissionWrapper::perform_command_mode_switch(
+    const std::vector<std::string> & start_interfaces,
+    const std::vector<std::string> & stop_interfaces) 
+  {
+    return wrapped_interface_->perform_command_mode_switch(start_interfaces,stop_interfaces);
+  }
 }
 
 #include "pluginlib/class_list_macros.hpp"
