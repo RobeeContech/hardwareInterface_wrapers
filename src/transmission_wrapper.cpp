@@ -157,9 +157,9 @@ namespace hardware_interface_wrappers
               found_state_interface = true;
               HackableHandle t(command_interfaces[k]);
               res.push_back(hardware_interface::CommandInterface(
-                  t.get_prefix_name(), t.get_interface_name(),&hw_joint_states_[j][i]));
+                  t.get_prefix_name(), t.get_interface_name(),&hw_joint_commands_[j][i]));
               tjh.push_back(transmission_interface::JointHandle(
-                  t.get_prefix_name(),t.get_interface_name(),&hw_joint_states_[j][i]));
+                  t.get_prefix_name(),t.get_interface_name(),&hw_joint_commands_[j][i]));
               tah.push_back(transmission_interface::ActuatorHandle(
                   t.get_prefix_name(),t.get_interface_name(),t.get_ptr()));
             }
