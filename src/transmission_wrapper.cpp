@@ -140,7 +140,7 @@ namespace hardware_interface_wrappers
     
     std::vector<hardware_interface::CommandInterface> res;
     //replace state interface of joints as are in the wrapped interface with the joint space converted vars
-  // map from joint index, to all its  JointHandle (one for each used state_interfaces)
+    // map from joint index, to all its  JointHandle (one for each used state_interfaces)
     std::map<std::string,std::vector<JointHandle>>     joint_handles_cmds; 
     std::map<std::string, std::vector<ActuatorHandle>> actuator_handles_cmds;
 
@@ -208,17 +208,16 @@ namespace hardware_interface_wrappers
   hardware_interface::return_type TransmissionWrapper::read(
     const rclcpp::Time & time, const rclcpp::Duration & period)
   {
-    auto res =  wrapped_interface_->read(time,period);
+    read_result_ =  wrapped_interface_->read(time,period);
     transmission_manager_->state_actuator_to_joint();
-    return res;
+    return read_result_;
   }
 
   hardware_interface::return_type TransmissionWrapper::write(
     const rclcpp::Time & time, const rclcpp::Duration & period)
   {      
       transmission_manager_->cmd_joint_to_actuator();
-      auto res = wrapped_interface_->write(time,period);
-      return res;
+      return wrapped_interface_->write(time,period);
   }
 
   hardware_interface::return_type TransmissionWrapper::prepare_command_mode_switch(

@@ -102,6 +102,9 @@ namespace hardware_interface_wrappers
 
       std::vector<std::vector<double>> hw_joint_commands_;
       std::vector<std::vector<double>> hw_joint_states_;
+
+      //result of the wrapped read operation. defined so no new memory will be used in real_time code.
+      hardware_interface::return_type read_result_;
     };
 
 

@@ -1,8 +1,11 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package transmission_interface
+Changelog for package hardware_interface_wrappers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-0.0.1 (2022-21-8)
+1.0.0 (2023-22-2)
 ------------------
-* Scara Transmission interface and loader
+* TransmissionWrapper implemented
+* Unit tests for TransmissionWrapper implemented
+* all unit tests pass.
+* Contributors: yoav fekete

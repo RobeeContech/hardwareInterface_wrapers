@@ -5,7 +5,8 @@
          base_class_type="hardware_interface::SystemInterface">
     <description>
       wrapper hardware interface that integrates the  ros2 Transmissions on the joints states and comannds.
-      Transmisions are dynamiclay loaded wiht use of transmisions_manager class.
+      Transmisions are dynamiclay loaded with use of transmisions_manager class, another hardware interface is loadde and warpped ,
+      and all joints command and states are 
     </description>
   </class>
 
@@ -13,6 +14,7 @@
          type="test_hardware_interface_wrappers::TestableJointSystem"
          base_class_type="hardware_interface::SystemInterface">
     <description>
+     a simple joint stataes and command mook hardware interface. used to unit test TransmissionWrapper hardware interface
     </description>
   </class>
 
