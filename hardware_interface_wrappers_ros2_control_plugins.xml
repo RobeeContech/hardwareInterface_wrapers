@@ -9,4 +9,11 @@
     </description>
   </class>
 
+   <class name="test_hardware_interface_wrappers/TestableJointSystem"
+         type="test_hardware_interface_wrappers::TestableJointSystem"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+    </description>
+  </class>
+
 </library>

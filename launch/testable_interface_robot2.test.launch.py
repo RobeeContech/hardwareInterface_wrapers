@@ -13,7 +13,7 @@ def generate_launch_description():
   
     # General arguments
     description_package = "hardware_interface_wrappers"
-    description_file = "robot.urdf.xacro"
+    description_file = "robot2_no_transmissions.urdf.xacro"
     
     robot_description_content = Command(
         [
@@ -26,7 +26,7 @@ def generate_launch_description():
 
 
     controller_config = PathJoinSubstitution(
-         [FindPackageShare(description_package), "config", "controller_configuration.yaml"]
+         [FindPackageShare(description_package), "config", "controller_test_configuration_2.yaml"]
     )
     
     controller_manager= Node(
@@ -39,7 +39,7 @@ def generate_launch_description():
     # Load controllers
     load_controllers = []
     for controller in [
-        "robee_arm_controller",
+        "joint_controller",
         "joint_state_broadcaster",
     ]:
         load_controllers += [

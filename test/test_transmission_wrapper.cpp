@@ -13,42 +13,13 @@
 // limitations under the License.
 
 #include <gmock/gmock.h>
-#include <exception>
-#include <memory>
-#include <string>
-#include <vector>
-
-#include "hardware_interface/component_parser.hpp"
-#include "hardware_interface/hardware_info.hpp"
-#include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "pluginlib/class_loader.hpp"
 #include "hardware_interface_wrappers/transmission_wrapper.hpp"
+#include "hardware_interface/component_parser.hpp"
 
 using testing::SizeIs;
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
-class PluginLoader
-{
-public:
-/*  std::shared_ptr<transmission_interface::TransmissionLoader> create(const std::string & type)
-  {
-    try
-    {
-      return class_loader_.createUniqueInstance(type);
-    }
-    catch (std::exception & ex)
-    {
-      std::cerr << ex.what() << std::endl;
-      return std::shared_ptr<transmission_interface::TransmissionLoader>();
-    }
-  }
-
-private:
-  // must keep it alive because instance destroyers need it
-  pluginlib::ClassLoader<transmission_interface::TransmissionLoader> class_loader_ = {
-    "transmission_interface", "transmission_interface::TransmissionLoader"};
-
-    */
-};
+const rclcpp::Logger logger = rclcpp::get_logger("TransmissionWrapperTest");
 
 TEST(TransmissionWrapperTest, FullSpec)
 {
@@ -57,6 +28,10 @@ TEST(TransmissionWrapperTest, FullSpec)
     <?xml version="1.0"?>
     <robot name="robot" xmlns="http://www.ros.org">
       <ros2_control name="FullSpec" type="system">
+        <hardware>
+            <plugin>hardware_interface_wrappers/TransmissionWrapper</plugin>
+            <param name="wrapped_interface">test_hardware_interface_wrappers/TestableJointSystem</param>
+        </hardware>
         <joint name="joint1">
           <command_interface name="velocity">
             <param name="min">-0.5</param>
@@ -72,7 +47,7 @@ TEST(TransmissionWrapperTest, FullSpec)
           <state_interface name="position"/>
         </joint>
         <transmission name="transmission1">
-          <plugin>transmission_interface/ScaraTransmission</plugin>
+          <plugin>robee_transmission_interface/ScaraTransmission</plugin>
           <actuator name="joint1_motor" role="actuator1">
             <mechanical_reduction>50</mechanical_reduction>
           </actuator>
@@ -94,30 +69,22 @@ TEST(TransmissionWrapperTest, FullSpec)
 
   std::vector<hardware_interface::HardwareInfo> infos =
     hardware_interface::parse_control_resources_from_urdf(urdf_to_test);
-  //ASSERT_THAT(infos[0].transmissions, SizeIs(1));
 
-  // Transmission loader
-  //TransmissionPluginLoader loader;
-  //std::shared_ptr<transmission_interface::TransmissionLoader> transmission_loader =
-    //loader.create(infos[0].transmissions[0].type);
- /* ASSERT_TRUE(nullptr != transmission_loader);
+  hardware_interface_wrappers::TransmissionWrapper hi;
+  ASSERT_EQ(hi.on_init(infos[0]),CallbackReturn::SUCCESS);
 
-  std::shared_ptr<transmission_interface::Transmission> transmission;
-  const hardware_interface::TransmissionInfo & info = infos[0].transmissions[0];
-  transmission = transmission_loader->load(info);
+  // auto si = hi.export_state_interfaces();
+  // auto ci = hi.export_command_interfaces();
+  // rclcpp::Time t;
+  // rclcpp::Duration d(0,0);
+  
+  // //set cmd
+  // hi.write(t,d);
+  // hi.read(t,d);
 
-  // Validate transmission
-  transmission_interface::ScaraTransmission * scara_transmission =
-    dynamic_cast<transmission_interface::ScaraTransmission *>(transmission.get());
-  ASSERT_TRUE(nullptr != scara_transmission);
+  // //check that stae == cmd
+  
 
-  const std::vector<double> & joint_reduction = scara_transmission->get_joint_reduction();
-  EXPECT_EQ(2.0, joint_reduction[0]);
-  EXPECT_EQ(-2.0, joint_reduction[1]);
-
-  const std::vector<double> & joint_offset = scara_transmission->get_joint_offset();
-  EXPECT_EQ(0.5, joint_offset[0]);
-  EXPECT_EQ(-0.5, joint_offset[1]);
-
-  */
+  RCLCPP_INFO_STREAM(logger,"Done test of Transmission Wrapper");
 }
+

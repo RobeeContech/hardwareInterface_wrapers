@@ -42,8 +42,6 @@ namespace hardware_interface_wrappers
       }
   };
 
-
-
   /**
    * \brief Class for loading a Basic transmission instance from configuration data.
    */
@@ -57,7 +55,6 @@ namespace hardware_interface_wrappers
       ~TransmissionWrapper(){
           if (wrapped_interface_)  wrapped_interface_.reset();
           loader_.reset();
-          SystemInterface::~SystemInterface();
       }
 
       HARDWARE_INTERFACE_WRAPPERS_PUBLIC

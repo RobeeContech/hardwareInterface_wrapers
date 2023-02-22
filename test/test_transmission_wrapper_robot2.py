@@ -21,7 +21,7 @@
 # LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
 # CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
 # SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# INTERRUPTION) HOWEVER CAUSED AND ON AN10Y THEORY OF LIABILITY, WHETHER IN
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
@@ -34,23 +34,18 @@ import pytest
 
 import launch_testing
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.substitutions import LaunchConfiguration
+from launch.actions import  IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
-from rclpy.subscription  import Subscription
 
 from builtin_interfaces.msg import Duration
 from control_msgs.action import FollowJointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
 
 from sensor_msgs.msg import JointState
-#from controller_manager_msgs.srv import SwitchController
-#from std_srvs.srv import Trigger
-
 
 @pytest.mark.launch_test
 def generate_test_description():
@@ -58,7 +53,7 @@ def generate_test_description():
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     launch_file = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([dir_path, "/../launch/hardware_interface_and_fake_robee.launch.py"]),
+        PythonLaunchDescriptionSource([dir_path, "/../launch/transmission_wrapper_robot2.test.launch.py"]),
     )
 
     ld = []
@@ -72,7 +67,7 @@ class RobeeTest(unittest.TestCase):
     def setUpClass(cls):
         # Initialize the ROS context
         rclpy.init()
-        cls.node = Node("robee_robot_hardware_interface_test_node")
+        cls.node = Node("transmission_wrapper_test_node")
         time.sleep(1)
         cls.init_robot(cls)
 
@@ -83,15 +78,16 @@ class RobeeTest(unittest.TestCase):
         rclpy.shutdown()
     
     @classmethod
-    def topic_callback(cls,position):
+    def topic_callback(cls,position, velocity):
         cls.position= position
+        cls.velocity= velocity
 
     def init_robot(self):
         # subscribe to joint states to validate the path executed
         self.subscription = self.node.create_subscription(
             JointState,
             '/joint_states',
-             lambda msg:  self.topic_callback(msg.position),
+             lambda msg:  self.topic_callback(msg.position,msg.velocity),
             10)
         self.subscription  # prevent unused variable warning
 
@@ -99,11 +95,11 @@ class RobeeTest(unittest.TestCase):
         self.jtc_action_client = ActionClient(
             self.node,
             FollowJointTrajectory,
-            "/robee_arm_controller/follow_joint_trajectory"
+            "/joint_controller/follow_joint_trajectory"
         )
         if self.jtc_action_client.wait_for_server(10) is False:
             raise Exception(
-                "Could not reach /robee_arm_controller/follow_joint_trajectory action server,"
+                "Could not reach /joint_controller/follow_joint_trajectory action server,"
                 "make sure that controller is active (load + start)"
             )
 
@@ -133,12 +129,17 @@ class RobeeTest(unittest.TestCase):
         goal.trajectory.joint_names = [
             "joint1",
             "joint2",
-            "joint_z",
-            "joint_z_rot",
+            "joint3"
         ]
-        position_list = [[0.0 for i in range(4)]]
-        position_list.append([0.5,1.5,2.5,4.5])
-        position_list.append([1.0,2.0,3.0,5.0])
+        position_list = [[0.0, 0.0 ,0.0]]
+        position_list.append([0.5,1.5,2.5])
+        position_list.append([1.0,2.0,3.0])
+
+
+        
+        velocity_list = [[0.11,0.12,0.13]]
+        velocity_list.append([0.2,0.3,0.4])
+        velocity_list.append([0.31,0.34,0.36])
         
         duration_list = [
             Duration(sec=1, nanosec=0),
@@ -149,13 +150,14 @@ class RobeeTest(unittest.TestCase):
         for i, position in enumerate(position_list):
             point = JointTrajectoryPoint()
             point.positions = position
+            point.velocities = velocity_list[i]
             point.time_from_start = duration_list[i]
             goal.trajectory.points.append(point)
 
         self.node.get_logger().info("Sending simple goal")
 
         goal_response = self.call_action(self.jtc_action_client, goal)
-        n = 10
+        n = 3
         while n>0 and not goal_response.accepted:
             self.node.get_logger().info("Sleep")
             time.sleep(0.5)
@@ -170,12 +172,16 @@ class RobeeTest(unittest.TestCase):
             self.assertEqual(result.error_code, FollowJointTrajectory.Result.SUCCESSFUL)
             self.node.get_logger().info("Received result SUCCESSFUL")           
             w = 10
-            while self.position[0]<2 and w>0:
+            self.node.get_logger().info('w =  "%d"' % w)
+            while  w>0:
                 rclpy.spin_once(self.node)
                 time.sleep(0.5)
                 w= w-1
             self.node.get_logger().info('Last position "%s"' % self.position)
-            self.assertEqual(self.position[0], 2.0)
-            self.assertEqual(self.position[1], 5.0)
-            self.assertEqual(self.position[2], 1.0)
-            self.assertEqual(self.position[5], 3.0)
+            self.assertEqual(self.position[0], 1.0)
+            self.assertEqual(self.position[1], 2.0)
+            self.assertEqual(self.position[2], 3.0)
+
+            self.assertEqual(self.velocity[0], 0.31)
+            self.assertEqual(self.velocity[1], 0.34)
+            self.assertEqual(self.velocity[2], 0.36)
