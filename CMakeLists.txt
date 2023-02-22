@@ -30,21 +30,19 @@ endforeach()
 
 add_library(${PROJECT_NAME} SHARED
   src/transmission_wrapper.cpp
+  test/testable_joint_system_interface.cpp
 )
-target_include_directories(
-  ${PROJECT_NAME}
-  PUBLIC
-  include
-  transmission_manager
-)
+target_include_directories(${PROJECT_NAME} PRIVATE include)
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
-
+target_compile_definitions(${PROJECT_NAME} PRIVATE "HARDWARE_INTERFACE_WRAPPERS_BUILDING_DLL")
 pluginlib_export_plugin_description_file(hardware_interface hardware_interface_wrappers_ros2_control_plugins.xml)
+
+
 
 
 # INSTALL
 install(
-  TARGETS ${PROJECT_NAME}
+  TARGETS ${PROJECT_NAME} 
   DESTINATION lib
 )
 
@@ -58,28 +56,40 @@ install(
     launch
     config
     urdf
+    test
   DESTINATION
     share/${PROJECT_NAME}/
 )
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gmock REQUIRED)
+  find_package(ament_lint_auto REQUIRED)
+  find_package(launch_testing_ament_cmake)
+  foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+    find_package(${Dependency} REQUIRED)
+  endforeach()
 
   ament_add_gmock(
-    test_transmission_wrapper
-    test/transmission_wrapper_test.cpp
+    test_testable_joint_system_interface
+    test/test_testable_joint_system_interface.cpp
   )
-  target_include_directories(test_transmission_wrapper PUBLIC include hardware_interface transmission_manager)
-  ament_target_dependencies(test_transmission_wrapper hardware_interface transmission_manager)
+  target_include_directories(test_testable_joint_system_interface PRIVATE include)
+  ament_target_dependencies(test_testable_joint_system_interface hardware_interface)
 
+   ament_add_gmock(
+     test_transmission_wrapper
+     test/test_transmission_wrapper.cpp
+   )
+   target_include_directories(test_transmission_wrapper PRIVATE include)
+   target_link_libraries(test_transmission_wrapper
+     hardware_interface_wrappers
+    )
 
-  ament_add_gmock(
-    test_transmission_wrapper_loader
-    test/transmission_wrapper_loader_test.cpp
-  )
-  target_include_directories(test_transmission_wrapper_loader PUBLIC include hardware_interface transmission_manager)
-  ament_target_dependencies(test_transmission_wrapper_loader hardware_interface transmission_manager)
-
+    ament_lint_auto_find_test_dependencies()
+    add_launch_test(test/test_transmission_wrapper_robot1.py)
+    add_launch_test(test/test_transmission_wrapper_robot2.py)
+    add_launch_test(test/test_testable_joint_system_robot1.py)
+    add_launch_test(test/test_testable_joint_system_robot2.py)
 endif()
 
 ament_export_include_directories(

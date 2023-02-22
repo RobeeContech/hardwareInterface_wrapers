@@ -85,8 +85,8 @@ namespace hardware_interface_wrappers
     //replace state interface of joints as are in the wrapped interface with the joint space converted vars
 
   // map from joint index, to all its  JointHandle (one for each used state_interfaces)
-    std::map<std::string,std::vector<JointHandle>>     joint_handles; 
-    std::map<std::string, std::vector<ActuatorHandle>> actuator_handles;
+   std::map<std::string, std::vector<JointHandle>>     joint_handles_states; 
+   std::map<std::string, std::vector<ActuatorHandle>>  actuator_handles_states;
 
     for(long unsigned int k = 0; k<state_interfaces.size(); k++) 
     {
@@ -95,9 +95,7 @@ namespace hardware_interface_wrappers
       {
         if (state_interfaces[k].get_prefix_name() == info_.joints[j].name)
         {
-          is_joint_state = true;
-          std::vector<JointHandle>    tjh;
-          std::vector<ActuatorHandle> tah;
+          is_joint_state = true;        
           bool found_state_interface = false;
           for (uint i = 0; i < info_.joints[j].state_interfaces.size(); i++ && !found_state_interface)
           {
@@ -107,10 +105,20 @@ namespace hardware_interface_wrappers
               HackableHandle t(state_interfaces[k]);
               res.push_back(hardware_interface::StateInterface(
                   t.get_prefix_name(), t.get_interface_name(),&hw_joint_states_[j][i]));
-              tjh.push_back(transmission_interface::JointHandle(
-                  t.get_prefix_name(),t.get_interface_name(),&hw_joint_states_[j][i]));
-              tah.push_back(transmission_interface::ActuatorHandle(
-                  t.get_prefix_name(),t.get_interface_name(),t.get_ptr()));
+              if (auto search = joint_handles_states.find(info_.joints[j].name); search != joint_handles_states.end())
+              {
+                search->second.emplace_back(t.get_prefix_name(),t.get_interface_name(),&hw_joint_states_[j][i]);
+                actuator_handles_states[info_.joints[j].name].emplace_back(t.get_prefix_name(),t.get_interface_name(),t.get_ptr());
+              }  
+              else
+              {
+                std::vector<JointHandle>    tjh;
+                std::vector<ActuatorHandle> tah;
+                tjh.emplace_back(t.get_prefix_name(),t.get_interface_name(),&hw_joint_states_[j][i]);
+                tah.emplace_back(t.get_prefix_name(),t.get_interface_name(),t.get_ptr());
+                joint_handles_states[info_.joints[j].name]=tjh;
+                actuator_handles_states[info_.joints[j].name]=tah;
+              }
             }
           }
           if (!found_state_interface) {
@@ -118,14 +126,11 @@ namespace hardware_interface_wrappers
             res.clear();
             return res;
           }
-          joint_handles[info_.joints[j].name] = tjh;
-          actuator_handles[info_.joints[j].name] = tah;
         }
       }
       if (!is_joint_state) res.push_back(state_interfaces[k]);
     }
-
-    transmission_manager_->config_states_transmissions(info_ , joint_handles, actuator_handles);
+    transmission_manager_->config_states_transmissions(info_ , joint_handles_states, actuator_handles_states);
     return res;
   }
 
@@ -136,8 +141,8 @@ namespace hardware_interface_wrappers
     std::vector<hardware_interface::CommandInterface> res;
     //replace state interface of joints as are in the wrapped interface with the joint space converted vars
   // map from joint index, to all its  JointHandle (one for each used state_interfaces)
-    std::map<std::string,std::vector<JointHandle>>     joint_handles; 
-    std::map<std::string, std::vector<ActuatorHandle>> actuator_handles;
+    std::map<std::string,std::vector<JointHandle>>     joint_handles_cmds; 
+    std::map<std::string, std::vector<ActuatorHandle>> actuator_handles_cmds;
 
     for(long unsigned int k = 0; k<command_interfaces.size(); k++) 
     {
@@ -147,8 +152,6 @@ namespace hardware_interface_wrappers
         if (command_interfaces[k].get_prefix_name() == info_.joints[j].name)
         {
           is_joint_state = true;
-          std::vector<JointHandle>    tjh;
-          std::vector<ActuatorHandle> tah;
           bool found_state_interface = false;
           for (uint i = 0; i < info_.joints[j].command_interfaces.size(); i++ && !found_state_interface)
           {
@@ -158,10 +161,20 @@ namespace hardware_interface_wrappers
               HackableHandle t(command_interfaces[k]);
               res.push_back(hardware_interface::CommandInterface(
                   t.get_prefix_name(), t.get_interface_name(),&hw_joint_commands_[j][i]));
-              tjh.push_back(transmission_interface::JointHandle(
-                  t.get_prefix_name(),t.get_interface_name(),&hw_joint_commands_[j][i]));
-              tah.push_back(transmission_interface::ActuatorHandle(
-                  t.get_prefix_name(),t.get_interface_name(),t.get_ptr()));
+              if (auto search = joint_handles_cmds.find(info_.joints[j].name); search != joint_handles_cmds.end())
+              {
+                search->second.emplace_back(t.get_prefix_name(),t.get_interface_name(),&hw_joint_commands_[j][i]);
+                actuator_handles_cmds[info_.joints[j].name].emplace_back(t.get_prefix_name(),t.get_interface_name(),t.get_ptr());
+              }  
+              else
+              {
+                std::vector<JointHandle>    tjh;
+                std::vector<ActuatorHandle> tah;
+                tjh.emplace_back(t.get_prefix_name(),t.get_interface_name(),&hw_joint_commands_[j][i]);
+                tah.emplace_back(t.get_prefix_name(),t.get_interface_name(),t.get_ptr());
+                joint_handles_cmds[info_.joints[j].name]=tjh;
+                actuator_handles_cmds[info_.joints[j].name]=tah;
+              }
             }
           }
           if (!found_state_interface) {
@@ -169,8 +182,6 @@ namespace hardware_interface_wrappers
             res.clear();
             return res;
           }
-          joint_handles[info_.joints[j].name] = tjh;
-          actuator_handles[info_.joints[j].name] = tah;
         }
       }
       if (!is_joint_state) {
@@ -178,7 +189,7 @@ namespace hardware_interface_wrappers
         res.push_back(hardware_interface::CommandInterface(t.get_prefix_name(), t.get_interface_name(),t.get_ptr()));
       }
     }
-    transmission_manager_->config_commands_transmissions(info_,joint_handles, actuator_handles);
+    transmission_manager_->config_commands_transmissions(info_,joint_handles_cmds, actuator_handles_cmds);
     return res;
   }
 
@@ -198,17 +209,15 @@ namespace hardware_interface_wrappers
     const rclcpp::Time & time, const rclcpp::Duration & period)
   {
     auto res =  wrapped_interface_->read(time,period);
-    //convert state to joint space
     transmission_manager_->state_actuator_to_joint();
     return res;
   }
 
   hardware_interface::return_type TransmissionWrapper::write(
     const rclcpp::Time & time, const rclcpp::Duration & period)
-  {
-      auto res = wrapped_interface_->write(time,period);
-      //convert commands to actuator space
+  {      
       transmission_manager_->cmd_joint_to_actuator();
+      auto res = wrapped_interface_->write(time,period);
       return res;
   }
 
