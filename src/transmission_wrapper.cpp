@@ -122,9 +122,7 @@ namespace hardware_interface_wrappers
             }
           }
           if (!found_state_interface) {
-            RCLCPP_FATAL_STREAM(logger,"export_state_interfaces Failed: " << info_.joints[j].name<< "::"<<state_interfaces[k].get_interface_name() <<" was not found!");
-            res.clear();
-            return res;
+             res.push_back(state_interfaces[k]);
           }
         }
       }
@@ -178,9 +176,8 @@ namespace hardware_interface_wrappers
             }
           }
           if (!found_state_interface) {
-            RCLCPP_FATAL_STREAM(logger,"export_state_interfaces Failed: " << info_.joints[j].name<< "::"<<command_interfaces[k].get_interface_name() <<" was not found!");
-            res.clear();
-            return res;
+              HackableHandle t(command_interfaces[k]);
+              res.push_back(hardware_interface::CommandInterface(t.get_prefix_name(), t.get_interface_name(),t.get_ptr()));
           }
         }
       }
