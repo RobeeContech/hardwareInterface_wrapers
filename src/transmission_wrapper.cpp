@@ -24,13 +24,11 @@ namespace hardware_interface_wrappers
     excluded_interface_name.emplace_back("mode_of_operation");
     hw_joint_states_.resize(info_.joints.size());
     for(uint j = 0; j < info_.joints.size(); j++)
-        hw_joint_states_[j].resize(info_.joints[j].state_interfaces.size(),
-            std::numeric_limits<double>::quiet_NaN());
+        hw_joint_states_[j].resize(info_.joints[j].state_interfaces.size(),0);
 
     hw_joint_commands_.resize(info_.joints.size());
     for(uint j = 0; j < info_.joints.size(); j++)
-        hw_joint_commands_[j].resize(info_.joints[j].command_interfaces.size(),
-            std::numeric_limits<double>::quiet_NaN());
+        hw_joint_commands_[j].resize(info_.joints[j].command_interfaces.size(),0);
 
     std::string wrapped_interface_name ="";
     for (auto x : info.hardware_parameters)
