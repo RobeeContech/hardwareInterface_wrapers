@@ -21,7 +21,9 @@ namespace hardware_interface_wrappers
         RCLCPP_FATAL(logger,"Init Of System Interface Failed!");
         return hardware_interface::CallbackReturn::ERROR;
     }
-    excluded_interface_name.emplace_back("mode_of_operation");
+    include_interface_name.emplace_back("position");
+    include_interface_name.emplace_back("velocity");
+    include_interface_name.emplace_back("effort");
     hw_joint_states_.resize(info_.joints.size());
     for(uint j = 0; j < info_.joints.size(); j++)
         hw_joint_states_[j].resize(info_.joints[j].state_interfaces.size(),0);
@@ -97,7 +99,7 @@ namespace hardware_interface_wrappers
           bool found_state_interface = false;
           for (uint i = 0; i < info_.joints[j].state_interfaces.size(); i++ && !found_state_interface)
           { 
-            if (state_interfaces[k].get_interface_name() == info_.joints[j].state_interfaces[i].name && std::find(excluded_interface_name.begin(),excluded_interface_name.end(),state_interfaces[k].get_interface_name()) == excluded_interface_name.end() )
+            if (state_interfaces[k].get_interface_name() == info_.joints[j].state_interfaces[i].name && std::find(include_interface_name.begin(),include_interface_name.end(),state_interfaces[k].get_interface_name()) != include_interface_name.end() )
             {
               found_state_interface = true;
               HackableHandle t(state_interfaces[k]);
@@ -145,7 +147,7 @@ namespace hardware_interface_wrappers
       bool is_joint_state = false;
       for(uint j = 0; j < info_.joints.size(); j++ && !is_joint_state) 
       {
-        if (command_interfaces[k].get_prefix_name() == info_.joints[j].name && std::find(excluded_interface_name.begin(),excluded_interface_name.end(),command_interfaces[k].get_interface_name()) == excluded_interface_name.end())
+        if (command_interfaces[k].get_prefix_name() == info_.joints[j].name && std::find(include_interface_name.begin(),include_interface_name.end(),command_interfaces[k].get_interface_name()) != include_interface_name.end())
         {
           is_joint_state = true;
           bool found_state_interface = false;
