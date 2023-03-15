@@ -99,7 +99,7 @@ namespace hardware_interface_wrappers
       std::unique_ptr<pluginlib::ClassLoader<hardware_interface::SystemInterface>> loader_;
       std::unique_ptr<transmission_manager::TransmissionManager>                   transmission_manager_;  
 
-
+      std::vector<std::string> include_interface_name;
       std::vector<std::vector<double>> hw_joint_commands_;
       std::vector<std::vector<double>> hw_joint_states_;
 
