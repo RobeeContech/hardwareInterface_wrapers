@@ -62,6 +62,9 @@ TEST(TransmissionWrapperTest, FullSpec)
             <offset>-0.5</offset>
             <mechanical_reduction>-2.0</mechanical_reduction>
           </joint>
+          <param name="ppr1">4000</param>
+          <param name="ppr2">8000</param>
+          <param name="screw_reduction">250</param>
         </transmission>
       </ros2_control>
     </robot>
