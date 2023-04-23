@@ -132,6 +132,9 @@
                     <offset>0</offset>
                     <mechanical_reduction>1.0</mechanical_reduction>
                   </joint>
+                  <param name="ppr1">4000</param>
+                  <param name="ppr2">8000</param>
+                  <param name="screw_reduction">250</param>
                 </transmission>
                  <transmission name="transmission_joint1">
                   <plugin>robee_transmission_interface/BasicTransmission</plugin>

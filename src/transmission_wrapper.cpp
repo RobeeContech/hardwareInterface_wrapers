@@ -4,6 +4,7 @@
 */
 #include "hardware_interface_wrappers/transmission_wrapper.hpp"
 #include <map>
+#include <limits>
 
 const rclcpp::Logger logger = rclcpp::get_logger("TransmissionWrapper");
 
@@ -22,15 +23,15 @@ namespace hardware_interface_wrappers
         return hardware_interface::CallbackReturn::ERROR;
     }
     include_interface_name.emplace_back("position");
-    include_interface_name.emplace_back("velocity");
-    include_interface_name.emplace_back("effort");
+    // include_interface_name.emplace_back("velocity");
+    // include_interface_name.emplace_back("effort");
     hw_joint_states_.resize(info_.joints.size());
     for(uint j = 0; j < info_.joints.size(); j++)
-        hw_joint_states_[j].resize(info_.joints[j].state_interfaces.size(),0);
+        hw_joint_states_[j].resize(info_.joints[j].state_interfaces.size(),std::numeric_limits<double>::quiet_NaN());
 
     hw_joint_commands_.resize(info_.joints.size());
     for(uint j = 0; j < info_.joints.size(); j++)
-        hw_joint_commands_[j].resize(info_.joints[j].command_interfaces.size(),0);
+        hw_joint_commands_[j].resize(info_.joints[j].command_interfaces.size(),std::numeric_limits<double>::quiet_NaN());
 
     std::string wrapped_interface_name ="";
     for (auto x : info.hardware_parameters)
